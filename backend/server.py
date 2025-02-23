@@ -1,11 +1,11 @@
 '''
 Landing Page (4):
 • 100%  As a user I want to view top 5 rented films of all times
-•   0%  As a user I want to be able to click on any of the top 5 films and view its details
+• 100%  As a user I want to be able to click on any of the top 5 films and view its details
 • 100%  As a user I want to be able to view top 5 actors that are part of films I have in the store
 •   0%  As a user I want to be able to view the actor’s details and view their top 5 rented films
 Films Page (3):
-• 100%  As a user I want to be able to search a film by name of film, name of an actor, or genre of the film
+•  50%  As a user I want to be able to search a film by name of film, name of an actor, or genre of the film
 •  50%  As a user I want to be able to view details of the film 
 •   0%  As a user I want to be able to rent a film out to a customer
 Customer Page (7):
@@ -169,9 +169,52 @@ def get_film_details(film_id):
         for d in data:
             data_json.append(dict(zip(row_headers, d)))
         cur.close()
-        return jsonify(data_json)
+        return jsonify({'film': data_json})
     elif request.method == 'PUT':
         pass
+
+@app.route('/actors/<actor_id>', methods=['GET'])
+def get_actor_details(actor_id):
+    sql_query = f"""
+    SELECT f.film_id, f.title, t4.film_rental_cnt
+    FROM film f
+    INNER JOIN (
+    	SELECT t2.film_id, t2.film_rental_cnt
+    	FROM film_actor fa
+    	INNER JOIN (
+    		SELECT fa.actor_id, COUNT(f.film_id) actor_film_cnt
+    		FROM film_actor fa
+    		INNER JOIN film f ON f.film_id = fa.film_id
+    		WHERE fa.actor_id = {actor_id}
+            GROUP BY fa.actor_id
+    		ORDER BY actor_film_cnt DESC
+    	) AS t1 ON t1.actor_id = fa.actor_id
+    	INNER JOIN (
+    		SELECT i.film_id, SUM(t3.inventory_rental_cnt) film_rental_cnt
+    		FROM inventory i
+    		INNER JOIN (
+    			SELECT r.inventory_id, COUNT(r.inventory_id) inventory_rental_cnt
+    			FROM rental r
+    			GROUP BY r.inventory_id
+    		) AS t3 ON t3.inventory_id = i.inventory_id
+    		GROUP BY i.film_id
+    		ORDER BY film_rental_cnt DESC
+    	) AS t2 ON fa.film_id = t2.film_id
+    	ORDER BY t2.film_rental_cnt DESC
+    ) AS t4 ON t4.film_id = f.film_id
+    ORDER BY t4.film_rental_cnt DESC
+    LIMIT 5
+    """
+    cur = mysql.connection.cursor()
+
+    cur.execute(sql_query)
+    row_headers=[x[0] for x in cur.description] #this will extract row headers
+    data = cur.fetchall()
+    data_json = []
+    for d in data:
+        data_json.append(dict(zip(row_headers, d)))
+    cur.close()
+    return jsonify({'actor': data_json})
 
 
 """
