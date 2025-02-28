@@ -41,30 +41,6 @@ function ActorsDialog(props) {
       {selectedActorDetails.map((film, idx) => (
         <h3>{film.title}</h3>
       ))}
-      {/*
-      <Stack spacing={2}>
-        <Card>
-          <Typography>
-            Description: {selectedFilmDetails.description}
-          </Typography>
-        </Card>
-        <Card>
-          <Typography>
-            Film Length: {selectedFilmDetails.length}
-          </Typography>
-        </Card>
-        <Card>
-          <Typography>
-            Rating: {selectedFilmDetails.rating}
-          </Typography>
-        </Card>
-        <Card>
-          <Typography>
-            Release Year: {selectedFilmDetails.release_year}
-          </Typography>
-        </Card>
-      </Stack>
-      */}
     </Dialog>
   )
 }
@@ -123,25 +99,6 @@ function Actors() {
         open={open}
         onClose={handleClose}
       />
-      {/*
-      <Stack 
-        direction="row" 
-        divider={<Divider orientation="vertical" flexItem />}
-        spacing={4}
-      >
-        {actorsArray.map((actor, idx) =>(
-        <Card sx={{ maxWidth: 150 }} key={idx}>
-          <CardActionArea>
-            <CardContent>
-              <Typography gutterBottom variant="body" component="div">
-                {actor.first_name} {actor.last_name}
-              </Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-        ))}
-      </Stack>
-      */}
     </div>
   );
 };
@@ -151,10 +108,6 @@ function FilmsDialog(props) {
   const [selectedFilmDetails, setSelectedFilmDetails] = useState([{}]);
   const handleClose = () => {
     onClose();
-  };
-
-  const handleListItemClick = (value) => {
-    onClose(value);
   };
 
   const fetchAPI = async () => {
@@ -252,28 +205,6 @@ function Films() {
         open={open}
         onClose={handleClose}
       />
-      {/* 
-      <Stack 
-        direction="row" 
-        divider={<Divider orientation="vertical" flexItem />}
-        spacing={4}
-      >
-        {filmsArray.map((film, idx) =>(
-        <Card sx={{ maxWidth: 150 }} key={idx}>
-          <CardActionArea>
-            <CardContent>
-              <Typography gutterBottom variant="h5" component="div">
-                {film.title} 
-              </Typography>
-              <Typography variant="caption">
-                {film.category}
-              </Typography>
-            </CardContent>
-          </CardActionArea>
-        </Card>
-        ))}
-      </Stack>
-      */}
     </Box>
   );
 };

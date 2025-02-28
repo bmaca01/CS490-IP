@@ -32,22 +32,12 @@ app.config['MYSQL_HOST'] = '172.21.16.1'
 mysql = MySQL(app)
 cors = CORS(app, origins='*')
 
-@app.route('/customers', methods=['GET'])
-def get_customers():
+@app.route('/countries', methods=['GET'])
+def countries():
     query = '''
     SELECT *
-    FROM customer
+    FROM country
     '''
-    arg_list = []
-
-    if len(request.args) != 0:
-        query += ' WHERE '
-    
-        for k, v in request.args.items():
-            arg_list.append(f"{k} = '{v}'")
-
-        query += ' OR '.join(arg_list)
-
     cur = mysql.connection.cursor()
     cur.execute(query)
     row_headers = [x[0] for x in cur.description]
@@ -57,7 +47,40 @@ def get_customers():
         data_json.append(dict(zip(row_headers, d)))
     cur.close()
 
-    return jsonify({'customers': data_json})
+    return jsonify({'countries': data_json})
+
+
+@app.route('/customers', methods=['GET', 'POST'])
+def customers():
+    if request.method == 'GET':
+        query = '''
+        SELECT *
+        FROM customer
+        '''
+        arg_list = []
+
+        if len(request.args) != 0:
+            query += ' WHERE '
+        
+            for k, v in request.args.items():
+                arg_list.append(f"{k} = '{v}'")
+
+            query += ' OR '.join(arg_list)
+
+        cur = mysql.connection.cursor()
+        cur.execute(query)
+        row_headers = [x[0] for x in cur.description]
+        data = cur.fetchall()
+        data_json = []
+        for d in data:
+            data_json.append(dict(zip(row_headers, d)))
+        cur.close()
+
+        return jsonify({'customers': data_json})
+    elif request.method == 'POST':
+        data = request.json
+        print('got a post')
+        return jsonify({'request': data})
 
 @app.route('/top-5-actors', methods=['GET'])
 def get_top_actors():
