@@ -12,8 +12,12 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid2';
 
-
 //import './App.css'
+
+const LANDING_ACTORS_ENDPOINT = 'http://127.0.0.1:5000/top-5-actors';
+const LANDING_FILMS_ENDPOINT = 'http://127.0.0.1:5000/top-5-films';
+const ACTORS_ENDPOINT = 'http://127.0.0.1:5000/actors/';
+const FILMS_ENDPOINT = 'http://127.0.0.1:5000/films/';
 
 function ActorsDialog(props) {
   const { selectedActor, onClose, open } = props;
@@ -27,7 +31,7 @@ function ActorsDialog(props) {
   };
 
   const fetchAPI = async () => {
-    const response = await axios.get("http://127.0.0.1:5000/actors/" + selectedActor);
+    const response = await axios.get(ACTORS_ENDPOINT + selectedActor);
     setSelectedActorDetails(response.data.actor);
   };
 
@@ -61,7 +65,7 @@ function Actors() {
   };
 
   const fetchAPI = async () => {
-    const response = await axios.get("http://127.0.0.1:5000/top-5-actors");
+    const response = await axios.get(LANDING_ACTORS_ENDPOINT);
     setActorsArray(response.data.top_5_actors);
   };
 
@@ -71,34 +75,19 @@ function Actors() {
 
   return (
     <div>
-      <Typography gutterBottom variant="h3">
-        Top 5 Actors
-      </Typography>
-      <Grid 
-        container 
-        spacing={{ xs: 2, md: 3 }} 
-        columns={{ xs: 4, sm: 8, md: 12 }}
-        sx={{
-          justifyContent: "center"
-        }}
-      >
+      <Typography gutterBottom variant="h3"> Top 5 Actors </Typography>
+      <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} sx={{ justifyContent: "center" }} >
         {actorsArray.map((actor, idx) =>(
         <Grid item xs={2} sm={4} md={4} key={idx} id={actor.actor_id} onClick={handleClickOpen}>
             <Card>
               <CardActionArea>
-                <Typography gutterBottom variant="h5">
-                  {actor.first_name} {actor.last_name}
-                </Typography>
+                <Typography gutterBottom variant="h5"> {actor.first_name} {actor.last_name} </Typography>
               </CardActionArea>
             </Card>
         </Grid>
         ))}
       </Grid>
-      <ActorsDialog
-        selectedActor={selectedActor}
-        open={open}
-        onClose={handleClose}
-      />
+      <ActorsDialog selectedActor={selectedActor} open={open} onClose={handleClose} />
     </div>
   );
 };
@@ -111,7 +100,7 @@ function FilmsDialog(props) {
   };
 
   const fetchAPI = async () => {
-    const response = await axios.get("http://127.0.0.1:5000/films/" + selectedFilm);
+    const response = await axios.get(FILMS_ENDPOINT + selectedFilm);
     setSelectedFilmDetails(response.data.film[0]);
   };
 
@@ -123,26 +112,10 @@ function FilmsDialog(props) {
     <Dialog onClose={handleClose} open={open}>
       <DialogTitle>Details</DialogTitle>
       <Stack spacing={2}>
-        <Card>
-          <Typography>
-            Description: {selectedFilmDetails.description}
-          </Typography>
-        </Card>
-        <Card>
-          <Typography>
-            Film Length: {selectedFilmDetails.length}
-          </Typography>
-        </Card>
-        <Card>
-          <Typography>
-            Rating: {selectedFilmDetails.rating}
-          </Typography>
-        </Card>
-        <Card>
-          <Typography>
-            Release Year: {selectedFilmDetails.release_year}
-          </Typography>
-        </Card>
+        <Card> <Typography> Description: {selectedFilmDetails.description} </Typography> </Card>
+        <Card> <Typography> Film Length: {selectedFilmDetails.length} </Typography> </Card>
+        <Card> <Typography> Rating: {selectedFilmDetails.rating} </Typography> </Card>
+        <Card> <Typography> Release Year: {selectedFilmDetails.release_year} </Typography> </Card>
       </Stack>
     </Dialog>
   )
@@ -154,7 +127,7 @@ function Films() {
   const [open, setOpen] = useState(false);
 
   const fetchAPI = async () => {
-    const response = await axios.get("http://127.0.0.1:5000/top-5-films");
+    const response = await axios.get(LANDING_FILMS_ENDPOINT);
     setFilmsArray(response.data.top_5_movies);
   };
 
@@ -177,34 +150,19 @@ function Films() {
       <Typography gutterBottom variant="h3">
         Top 5 Rented Movies
       </Typography>
-      <Grid 
-        container 
-        spacing={{ xs: 2, md: 3 }} 
-        columns={{ xs: 4, sm: 8, md: 12 }}
-        sx={{
-          justifyContent: "center"
-        }}
-      >
+      <Grid container spacing={{ xs: 2, md: 3 }} columns={{ xs: 4, sm: 8, md: 12 }} sx={{ justifyContent: "center" }} >
         {filmsArray.map((film, idx) =>(
         <Grid item xs={2} sm={4} md={4} key={idx} id={film.film_id} onClick={handleClickOpen}>
             <Card>
               <CardActionArea>
-                <Typography gutterBottom variant="h5">
-                  {film.title} 
-                </Typography>
-                <Typography variant="caption">
-                  {film.category}
-                </Typography>
+                <Typography gutterBottom variant="h5"> {film.title} </Typography>
+                <Typography variant="caption"> {film.category} </Typography>
               </CardActionArea>
             </Card>
         </Grid>
         ))}
       </Grid>
-      <FilmsDialog
-        selectedFilm={selectedFilm}
-        open={open}
-        onClose={handleClose}
-      />
+      <FilmsDialog selectedFilm={selectedFilm} open={open} onClose={handleClose} />
     </Box>
   );
 };
@@ -220,4 +178,3 @@ function Landing() {
 }
 
 export default Landing
-

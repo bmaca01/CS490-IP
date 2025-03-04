@@ -1,20 +1,26 @@
-'''
-Landing Page (4):
+'''Landing Page (4): DONE
 • 100%  As a user I want to view top 5 rented films of all times
 • 100%  As a user I want to be able to click on any of the top 5 films and view its details
 • 100%  As a user I want to be able to view top 5 actors that are part of films I have in the store
-•   0%  As a user I want to be able to view the actor’s details and view their top 5 rented films
-Films Page (3):
+• 100%  As a user I want to be able to view the actor’s details and view their top 5 rented films
+'''
+
+
+'''Films Page (3):
 •  50%  As a user I want to be able to search a film by name of film, name of an actor, or genre of the film
 •  50%  As a user I want to be able to view details of the film 
 •   0%  As a user I want to be able to rent a film out to a customer
+'''
+
+
+'''
 Customer Page (7):
 • 100%  As a user I want to view a list of all customers (Pref. using pagination)
-•  50%  As a user I want the ability to filter/search customers by their customer id, first name or last name.
-•   0%  As a user I want to be able to add a new customer
-•   0%  As a user I want to be able to edit a customer’s details
+• 100%  As a user I want the ability to filter/search customers by their customer id, first name or last name.
+•  50%  As a user I want to be able to add a new customer
+•  50%  As a user I want to be able to edit a customer’s details
 •   0%  As a user I want to be able to delete a customer if they no longer wish to patron at store
-•   0%  As a user I want to be able to view customer details and see their past and present rental history
+•  50%  As a user I want to be able to view customer details and see their past and present rental history
 •   0%  As a user I want to be able to indicate that a customer has returned a rented movie
 '''
 
@@ -53,19 +59,145 @@ def countries():
 @app.route('/customers', methods=['GET', 'POST'])
 def customers():
     if request.method == 'GET':
-        query = '''
-        SELECT *
-        FROM customer
-        '''
-        arg_list = []
+        query_all = ''\
+'''
+SELECT
+    c.customer_id,
+    c.store_id,
+    c.first_name,
+    c.last_name,
+    c.email,
+    t1.phone,
+    t1.address,
+    t1.address2,
+    t1.city,
+    t1.district,
+    t1.postal_code,
+    t1.country,
+    c.create_date,
+    c.last_update,
+    c.active
+FROM customer c
+LEFT JOIN (
+    SELECT 
+        a.address_id,
+        a.phone,
+        a.address,
+        a.address2,
+        a.district,
+        ct.city,
+        a.postal_code,
+        co.country
+    FROM address a
+    LEFT JOIN city ct ON ct.city_id = a.city_id
+    LEFT JOIN country co ON co.country_id = ct.country_id
+) AS t1 ON t1.address_id = c.address_id
+'''
+        
 
+        query = ''\
+"""
+SELECT
+    c.customer_id, c.store_id, c.first_name,
+    c.last_name, c.email, t1.phone,
+    t1.address, t1.address2, t1.city,
+    t1.district, t1.postal_code, t1.country,
+    c.active, c.create_date, c.last_update
+FROM customer c
+LEFT JOIN (
+    SELECT 
+        a.address_id, a.phone, a.address,
+        a.address2, a.district, ct.city,
+        a.postal_code, co.country
+    FROM address a
+    LEFT JOIN city ct ON ct.city_id = a.city_id
+    LEFT JOIN country co ON co.country_id = ct.country_id
+) AS t1 ON t1.address_id = c.address_id
+LEFT JOIN rental r ON r.customer_id = c.customer_id
+WHERE r.return_date IS NULL
+"""
+
+
+        arg_list = []
         if len(request.args) != 0:
-            query += ' WHERE '
+            query_all += ' WHERE '
         
             for k, v in request.args.items():
-                arg_list.append(f"{k} = '{v}'")
+                match k:
+                    case 'customer_id':
+                        arg_list.append(f"{k} = '{v}'")
+                    case 'first_name' | 'last_name':
+                        arg_list.append(f"{k} LIKE '%{v}%'")
+            query_all += ' OR '.join(arg_list)
+        cur = mysql.connection.cursor()
 
-            query += ' OR '.join(arg_list)
+        if len(arg_list) != 0:
+            cur.execute(query_all)
+        else:
+            cur.execute(query)
+        row_headers = [x[0] for x in cur.description]
+        data = cur.fetchall()
+        data_json = []
+        for d in data:
+            data_json.append(dict(zip(row_headers, d)))
+        cur.close()
+        return jsonify({'customers': data_json})
+
+
+    elif request.method == 'POST':
+        data = request.json
+        print('got a post')
+        return jsonify({'request': data})
+
+
+@app.route('/customers/<customer_id>', methods=['GET', 'POST'])
+def customer(customer_id):
+    if request.method == 'GET':
+        query = ''\
+f'''
+SELECT 
+    t2.customer_id, t3.store_id,  
+    t2.active, t3.rental_id, t3.rental_date,
+    t3.return_date, t3.address, t3.city, 
+    t3.district, t3.country, t3.inventory_id,
+    t3.film_id, t3.title, t3.rental_duration, t3.last_update
+FROM (
+    SELECT
+        c.customer_id, c.active, c.store_id, c.first_name,
+        c.last_name, c.email, t1.phone, 
+        t1.address, t1.address2, t1.city,
+        t1.district, t1.postal_code, t1.country,
+        c.create_date, c.last_update
+    FROM customer c
+    LEFT JOIN (
+        SELECT 
+            a.address_id, a.phone, a.address,
+            a.address2, a.district, ct.city,
+            a.postal_code, co.country
+        FROM address a
+        LEFT JOIN city ct ON ct.city_id = a.city_id
+        LEFT JOIN country co ON co.country_id = ct.country_id
+    ) AS t1 ON t1.address_id = c.address_id
+) AS t2
+LEFT JOIN (
+    SELECT 
+        r.customer_id, r.rental_id, r.rental_date, 
+        r.return_date, r.last_update,
+        s.store_id, a.address, a.district,
+        ci.city, co.country,
+        i.inventory_id, f.film_id, f.title, f.rental_duration
+    FROM rental r
+    LEFT JOIN inventory i ON i.inventory_id = r.inventory_id
+    LEFT JOIN film f ON f.film_id = i.film_id
+    LEFT JOIN store s ON s.store_id = i.store_id
+    LEFT JOIN address a ON a.address_id = s.address_id
+    LEFT JOIN city ci ON ci.city_id = a.city_id
+    LEFT JOIN country co ON co.country_id = ci.country_id
+) AS t3 ON t3.customer_id = t2.customer_id
+WHERE t2.customer_id = {customer_id}
+ORDER BY t3.rental_date DESC, t3.return_date 
+'''
+        
 
         cur = mysql.connection.cursor()
         cur.execute(query)
@@ -75,12 +207,8 @@ def customers():
         for d in data:
             data_json.append(dict(zip(row_headers, d)))
         cur.close()
+        return jsonify({'details': data_json})
 
-        return jsonify({'customers': data_json})
-    elif request.method == 'POST':
-        data = request.json
-        print('got a post')
-        return jsonify({'request': data})
 
 @app.route('/top-5-actors', methods=['GET'])
 def get_top_actors():

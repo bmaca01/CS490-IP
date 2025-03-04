@@ -78,7 +78,7 @@ TablePaginationActions.propTypes = {
   rowsPerPage: PropTypes.number.isRequired,
 };
 
-export default function CustomPaginationActionsTable({ rows }) {
+export default function CustomerRentalsTable({ rows }) {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
 
@@ -95,19 +95,32 @@ export default function CustomPaginationActionsTable({ rows }) {
     setPage(0);
   };
 
+  const handleClick = (e) => {
+    e.preventDefault();
+    alert('click');
+    //console.log(e.currentTarget.id, id);
+    //selectCustomer(e.currentTarget.id);
+    //openEdit(true);
+  };
+
   return (
     <TableContainer component={Paper}>
-      <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
+      <Table sx={{ minWidth: 400 }} aria-label="custom pagination table">
         <TableHead>
           <TableRow>
-            <TableCell>Customer ID</TableCell>
-            <TableCell>Store ID</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell>First Name</TableCell>
-            <TableCell>Last Name</TableCell>
+            <TableCell>Rental ID</TableCell>
+            <TableCell>Return Date</TableCell>
             <TableCell>Active</TableCell>
-            <TableCell>Address ID</TableCell>
-            <TableCell>Create Date</TableCell>
+            <TableCell>Rental Date</TableCell>
+            <TableCell>Rental Duration</TableCell>
+            <TableCell>Film ID</TableCell>
+            <TableCell>Film Title</TableCell>
+            <TableCell>Store ID</TableCell>
+            <TableCell>Store Address</TableCell>
+            <TableCell>Store City</TableCell>
+            <TableCell>Store District</TableCell>
+            <TableCell>Store Country</TableCell>
+            <TableCell>Inventory ID</TableCell>
             <TableCell>Last Update</TableCell>
           </TableRow>
         </TableHead>
@@ -116,34 +129,31 @@ export default function CustomPaginationActionsTable({ rows }) {
             ? rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
             : rows
           ).map((row) => (
-            <TableRow key={row.customer_id}>
-              <TableCell component="th" scope="row">
-                {row.customer_id}
-              </TableCell>
-              <TableCell>
-                {row.store_id}
-              </TableCell>
-              <TableCell>
-                {row.email}
-              </TableCell>
-              <TableCell style={{ width: 160 }} align="left">
-                {row.first_name}
-              </TableCell>
-              <TableCell style={{ width: 160 }} align="left">
-                {row.last_name}
-              </TableCell>
-              <TableCell>
-                {row.active}
-              </TableCell>
-              <TableCell>
-                {row.address_id}
-              </TableCell>
-              <TableCell>
-                {row.create_date}
-              </TableCell>
-              <TableCell>
-                {row.last_update}
-              </TableCell>
+            <TableRow 
+              key={row.rental_id}
+              hover 
+              id={row.rental_id}
+              onClick={(e) => handleClick(e)}
+              //sx={{ cursor: 'pointer' }}
+            >
+              <TableCell component="th" scope="row"> {row.rental_id} </TableCell>
+              <TableCell> {row.return_date} </TableCell>
+              <TableCell> {row.active} </TableCell>
+              <TableCell> {row.rental_date} </TableCell>
+              <TableCell> {row.rental_duration} </TableCell>
+              <TableCell> {row.film_id} </TableCell>
+              <TableCell> {row.title} </TableCell>
+              <TableCell> {row.store_id} </TableCell>
+              <TableCell> {row.address} </TableCell>
+              <TableCell> {row.city} </TableCell>
+              <TableCell> {row.district} </TableCell>
+              <TableCell> {row.country} </TableCell>
+              <TableCell> {row.inventory_id} </TableCell>
+              <TableCell> {row.last_update} </TableCell>
+              {/**
+              <TableCell style={{ width: 160 }} align="left"> {row.first_name} </TableCell>
+              <TableCell style={{ width: 160 }} align="left"> {row.last_name} </TableCell>
+               */}
             </TableRow>
           ))}
           {emptyRows > 0 && (
@@ -178,3 +188,4 @@ export default function CustomPaginationActionsTable({ rows }) {
     </TableContainer>
   );
 }
+
