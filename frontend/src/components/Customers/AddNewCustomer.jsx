@@ -65,14 +65,12 @@ function AddNewCustomerDialog({onClose, open, setFormInput, countries}) {
           </Grid>
         </Box>
       </DialogContent>
-
     </Dialog>
   );
 };
 
-function AddNewCustomer({endpoint}) {
+function AddNewCustomer({endpoint, countries}) {
   const [open, setOpen] = useState(false);
-  const [countries, setCountries] = useState([])
 
   const handleSubmit = (e, data) => {
     e.preventDefault();
@@ -84,17 +82,11 @@ function AddNewCustomer({endpoint}) {
     const formJson = Object.fromEntries(formData.entries());
 
     axios.post(endpoint, formJson);
+    setOpen(false);
   };
 
   const handleClickOpen = () => { setOpen(true); };
   const handleClose = () => { setOpen(false); };
-
-  const getCountries = async () => {
-    const response = await axios.get(countries_endpoint);
-    setCountries(response.data.countries);
-  }
-
-  useEffect(() => { getCountries(); }, []);
 
   return (
     <Box>

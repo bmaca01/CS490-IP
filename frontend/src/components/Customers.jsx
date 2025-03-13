@@ -4,11 +4,12 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 
-import CustomerTable from './CustomerTable';
-import AddNewCustomer from './AddNewCustomer';
-import EditCustomer from './EditCustomer'
+import CustomerTable from './Customers/CustomerTable';
+import AddNewCustomer from './Customers/AddNewCustomer';
+import EditCustomer from './Customers/EditCustomer'
 
 const endpoint = "http://127.0.0.1:5000/customers"
+const countries_endpoint = 'http://127.0.0.1:5000/countries';
 
 function CustomerData({query, selectCust, openEditCust}) {
   const [customersArray, setCustomersArray] = useState([{}]);
@@ -57,15 +58,47 @@ function SearchForm({submitSearch}) {
 
 function Customers() {
   const [searchQuery, setSearchQuery] = useState({});
-  const [selectedCust, setSelectedCust] = useState({});
+  const [selectedCustId, setSelectedCustId] = useState(null);
+  const [selectedCustData, setSelectedCustData] = useState({});
   const [editDiagOpen, setEditDiagOpen] = useState(false);  // I love shared state and spaghetti code
+  const [countries, setCountries] = useState([])
+  const [state, setState] = useState('loading');
+
+
+  const fetchAPI = async () => {
+    setState('loading');
+    //const response = await axios.get(endpoint, {params: {customer_id: selectedCustId}})
+    await axios.get(endpoint, {params: {customer_id: selectedCustId}}).then((res) => {
+      console.log(res.data.customers);
+      setSelectedCustData(res.data.customers[0]);
+      setState('success');
+    });
+    //setSelectedCustData(response.data.customers[0]);
+  }
+
+  const getCountries = async () => {
+    const response = await axios.get(countries_endpoint);
+    setCountries(response.data.countries);
+  }
+
+  useEffect(() => { 
+    getCountries(); 
+  }, []);
+
+  useEffect(() => {
+    fetchAPI();
+  }, [selectedCustId])
 
   return (
     <>
       <SearchForm submitSearch={setSearchQuery} />
-      <AddNewCustomer endpoint={endpoint} />
-      <CustomerData query={searchQuery} selectCust={setSelectedCust} openEditCust={setEditDiagOpen} />
-      <EditCustomer editDiagOpen={editDiagOpen} setEditDiagOpen={setEditDiagOpen} cust={selectedCust} endpoint={endpoint} />
+      <AddNewCustomer endpoint={endpoint} countries={countries} />
+      <CustomerData query={searchQuery} selectCust={setSelectedCustId} openEditCust={setEditDiagOpen} />
+      {state === 'loading' ? (
+        <></>
+      ) : (
+        <EditCustomer editDiagOpen={editDiagOpen} setEditDiagOpen={setEditDiagOpen} cust={selectedCustData} endpoint={endpoint} countries={countries} />
+      )}
     </>
   )
 };

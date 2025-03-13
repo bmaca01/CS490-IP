@@ -96,7 +96,7 @@ export default function CustomerTable({ rows, selectCustomer, openEdit }) {
   };
 
   const handleClick = (e) => {
-    //console.log(e.currentTarget.id, id);
+    console.log(e.currentTarget.id);
     selectCustomer(e.currentTarget.id);
     openEdit(true);
   };

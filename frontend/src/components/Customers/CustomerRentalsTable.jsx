@@ -110,7 +110,6 @@ export default function CustomerRentalsTable({ rows }) {
           <TableRow>
             <TableCell>Rental ID</TableCell>
             <TableCell>Return Date</TableCell>
-            <TableCell>Active</TableCell>
             <TableCell>Rental Date</TableCell>
             <TableCell>Rental Duration</TableCell>
             <TableCell>Film ID</TableCell>
@@ -134,11 +133,10 @@ export default function CustomerRentalsTable({ rows }) {
               hover 
               id={row.rental_id}
               onClick={(e) => handleClick(e)}
-              //sx={{ cursor: 'pointer' }}
+              sx={{ cursor: 'pointer' }}
             >
               <TableCell component="th" scope="row"> {row.rental_id} </TableCell>
               <TableCell> {row.return_date} </TableCell>
-              <TableCell> {row.active} </TableCell>
               <TableCell> {row.rental_date} </TableCell>
               <TableCell> {row.rental_duration} </TableCell>
               <TableCell> {row.film_id} </TableCell>
