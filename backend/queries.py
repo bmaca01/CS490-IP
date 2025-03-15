@@ -30,12 +30,16 @@ q_TOP_FIVE_FILMS = '''
     INNER JOIN category c ON c.category_id = fc.category_id
     '''
 
-q_ALL_FILMS = '''SELECT * FROM film f 
-     INNER JOIN film_category fc ON fc.film_id = f.film_id
-     INNER JOIN category c ON c.category_id = fc.category_id
-     INNER JOIN film_actor fa ON fa.film_id = f.film_id
-     INNER JOIN actor a ON a.actor_id = fa.actor_id
-    '''
+q_ALL_FILMS = '''
+SELECT * FROM film f 
+    INNER JOIN film_category fc ON fc.film_id = f.film_id
+    INNER JOIN category c ON c.category_id = fc.category_id
+'''
+
+'''
+INNER JOIN film_actor fa ON fa.film_id = f.film_id
+INNER JOIN actor a ON a.actor_id = fa.actor_id
+'''
 
 q_ALL_CUSTOMER = ''\
 '''
@@ -153,6 +157,33 @@ def q_film_details(film_id):
         WHERE f.film_id = {film_id}
         """ 
 
+def q_film_actors(film_id):
+    return f"""
+SELECT
+    a.actor_id, f.film_id, a.first_name, a.last_name, f.title
+FROM film_actor fa
+LEFT JOIN actor a ON a.actor_id = fa.actor_id
+LEFT JOIN film f ON f.film_id = fa.film_id
+WHERE f.film_id = {film_id}
+ORDER BY a.actor_id ASC, f.film_id ASC
+    """
+
+def q_film_inventory(film_id):
+    return f"""
+SELECT i.store_id, i.film_id, COUNT(i.inventory_id) AS inventory_count
+FROM inventory i
+WHERE i.store_id = 1 AND i.film_id = {film_id}
+GROUP BY i.film_id
+    """
+
+def q_film_language(film_id):
+    return f"""
+SELECT l.language_id, l.name
+FROM film f
+INNER JOIN language l ON l.language_id = f.language_id
+WHERE f.film_id = {film_id}
+    """
+
 def q_actor_details(actor_id):
     return f"""
     SELECT f.film_id, f.title, t4.film_rental_cnt
@@ -185,7 +216,108 @@ def q_actor_details(actor_id):
     LIMIT 5
 """
 
-def u_cust_details(cust_id, new_details: dict):
+def a_new_city(new_details: dict):
+    return f'''INSERT IGNORE INTO city(city, country_id) VALUES ("{new_details['city']}", {new_details['country']})'''
+
+
+def a_new_addr(new_details: dict, city_id):
+    '''address, address2, district, city_id, postal_code, phone, location'''
+    addr2 = 'NULL' if new_details['addr2'] == '' else "'" + str(new_details['addr2']) + "'"
+    zip = 'NULL' if new_details['zip'] == '' else "'" + str(new_details['zip']) + "'"
+    return f'''
+    INSERT IGNORE INTO address(address, address2, district, city_id, postal_code, phone, location)
+    VALUES (
+        '{new_details['addr1']}',
+        {addr2},
+        '{new_details['district']}',
+        {city_id},
+        {zip},
+        '{new_details['phone']}',
+        ST_GeomFromText('POINT(1 1)')
+    )
+    '''
+
+
+def a_new_cust(new_details: dict, addr_id):
+    '''store_id, first_name, last_name, email, address_id, active'''
+    return f'''
+    INSERT INTO customer(store_id, first_name, last_name, email, address_id, active)
+    VALUES (
+        1,
+        '{new_details['fname']}',
+        '{new_details['lname']}',
+        '{new_details['email']}',
+        '{addr_id}',
+        1
+    )
+    '''
+
+def a_new_rental(fields):
+    return f'''
+INSERT INTO rental(rental_date, inventory_id, customer_id, staff_id)
+VALUES (
+    CURRENT_DATE(),
+    {fields['inventory_id']},
+    {fields['cid']},
+    1
+)
+'''
+
+def get_city_id_from_fields(fields):
+    return f'''
+SELECT c.city_id
+FROM city c
+WHERE
+    c.city = '{fields['city']}' AND
+    c.country_id = {fields['country']}
+'''
+
+def get_addr_id_from_fields(fields, city_id):
+    return f'''
+SELECT a.address_id
+FROM address a
+WHERE
+    a.address = '{fields['addr1']}' AND
+    a.district = '{fields['district']}' AND
+    a.city_id = {city_id} AND
+    a.phone = '{fields['phone']}'
+'''
+
+def update_rental(fields, cust_id):
+    return f'''
+UPDATE rental r
+SET
+    rental_date = CURRENT_DATE()
+WHERE r.customer_id = {cust_id} AND r.rental_id = {fields['r_id']}
+'''
+
+def update_city(fields, city_id):
+    return f'''
+UPDATE city c
+SET
+    c.country_id = {fields['country']}
+WHERE c.city_id = {city_id}
+'''
+
+def update_addr(fields, addr_id, city_id):
+    addr2 = 'NULL' if fields['addr2'] == '' else "'" + str(fields['addr2']) + "'"
+    zip = 'NULL' if fields['zip'] == '' else "'" + str(fields['zip']) + "'"
+    return f'''
+UPDATE address a
+INNER JOIN city ci ON ci.city_id = a.city_id
+SET
+    a.address       = '{fields['addr1']}',
+    a.address2      = {addr2},
+    a.phone         = '{fields['phone']}',
+    a.city_id       = {city_id},
+    a.district      = '{fields['district']}',
+    a.postal_code   = {zip},
+    ci.country_id   = {fields['country']}
+WHERE a.address_id = {addr_id}
+'''
+    
+
+def update_cust_details(cust_id, new_details: dict, addr_id):
     """On customer update, possible fields updated:
     first_name      :   customer
     last_name       :   customer
@@ -213,28 +345,45 @@ def u_cust_details(cust_id, new_details: dict):
         -- with the newly inserted city
     """
     return f'''
-BEGIN;
-
-
-
-
 UPDATE customer c
-INNER JOIN address a ON a.address_id = c.address_id
-INNER JOIN city ci ON ci.city_id = a.city_id
-INNER JOIN country co ON co.country_id = ci.country_id
 SET
-    c.first_name = {new_details['fname']},
-    c.last_name  = {new_details['lname']},
-    c.email      =   {new_details['email']},
-    a.phone      =   {new_details['phone']},
-    a.address    =   {new_details['addr1']},
-    a.address2   =   {new_details['addr2']},
-    c.city       =   {new_details['city']},
-    c.district   =   {new_details['district']},
-    c.postal_code=   {new_details['zip']},
-    c.country_id =   {new_details['country']},
-    c.active     =   {new_details['active']},
-WHERE customer_id = {cust_id}
+    c.first_name        =   "{new_details['fname']}",
+    c.last_name         =   "{new_details['lname']}",
+    c.email             =   "{new_details['email']}",
+    c.address_id        =   {addr_id},
+    c.active            =   {new_details['active']}
+WHERE c.customer_id = {cust_id}
+'''
 
-COMMIT;
+def d_duplicate_addr():
+    return f'''
+DELETE a FROM address a
+INNER JOIN address b
+WHERE
+	a.address_id > b.address_id AND
+    a.address = b.address AND
+    a.address2 <=> b.address2 AND
+    a.district = b.district AND
+    a.city_id = b.city_id AND
+    a.postal_code <=> b.postal_code AND
+    a.phone = b.phone AND
+    a.location = b.location;
+'''
+def d_cust(cust_id):
+    return f'''DELETE FROM customer c WHERE c.customer_id = {cust_id}'''
+
+
+def q_film_availability(film_id):
+    return f'''
+SELECT t1.film_id, t1.inventory_id, r.return_date, r.customer_id
+FROM (
+	SELECT i.film_id, i.inventory_id, MAX(r.rental_id) AS latest
+	FROM inventory i
+	INNER JOIN rental r ON r.inventory_id = i.inventory_id
+	WHERE i.film_id = {film_id} AND i.store_id = 1
+	GROUP BY i.film_id, i.inventory_id
+	ORDER BY i.inventory_id
+) AS t1
+INNER JOIN rental r ON r.rental_id = t1.latest
+;
 '''

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import axios from 'axios';
 import PropTypes from 'prop-types';
 import { useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
@@ -17,11 +18,7 @@ import KeyboardArrowLeft from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRight from '@mui/icons-material/KeyboardArrowRight';
 import LastPageIcon from '@mui/icons-material/LastPage';
 
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import DialogContent from '@mui/material/Dialog';
+import FilmDetailsDialog from './FilmDetailsDialog';
 
 function TablePaginationActions(props) {
   const theme = useTheme();
@@ -84,15 +81,62 @@ TablePaginationActions.propTypes = {
   rowsPerPage: PropTypes.number.isRequired,
 };
 
-export default function CustomerRentalsTable({ rows, setRentalId }) {
+function FilmsTable({ searchResult, endpoint }) {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [open, setOpen] = React.useState(false);
-  const [rID, setRID] = React.useState(0)
+  const [state, setState] = React.useState('loading');
+  const [selectedFilm, setSelectedFilm] = React.useState(1);
+  const [selectedFilmDetails, setSelectedFilmDetails] = React.useState({});
+  const [selectedFilmActors, setSelectedFilmActors] = React.useState([]);
+  const [selectedFilmCount, setSelectedFilmCount] = React.useState([]);
+  const [selectedFilmLanguage, setSelectedFilmLanguage] = React.useState([]);
+  const [selectedFilmStock, setSelectedFilmStock] = React.useState([]);
 
   // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - searchResult.length) : 0;
+
+  const fetchAPI = async () => {
+    setState('loading');
+    const [details, actors, inventory, language, stock] = await Promise.all([
+      fetchAPI_details(), 
+      fetchAPI_actors(), 
+      fetchAPI_inventory(),
+      fetchAPI_language(),
+      fetchAPI_stock()
+    ])
+    setSelectedFilmDetails(details.data);
+    setSelectedFilmActors(actors.data);
+    setSelectedFilmCount(inventory.data);
+    setSelectedFilmLanguage(language.data);
+    setSelectedFilmStock(stock.data);
+    setState('success');
+  };
+
+  const fetchAPI_details = async () => {
+    const response = axios.get(endpoint + '/' + selectedFilm);
+    return response;
+  };
+
+  const fetchAPI_actors = async () => {
+    const response = axios.get(endpoint + '/' + selectedFilm + '/actors');
+    return response;
+  };
+
+  const fetchAPI_inventory = async () => {
+    const response = axios.get(endpoint + '/' + selectedFilm + '/inventory');
+    return response;
+  };
+
+  const fetchAPI_language = async () => {
+    const response = axios.get(endpoint + '/' + selectedFilm + '/language');
+    return response;
+  };
+
+  const fetchAPI_stock = async () => {
+    const response = axios.get(endpoint + '/' + selectedFilm + '/availability');
+    return response;
+  };
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -103,69 +147,46 @@ export default function CustomerRentalsTable({ rows, setRentalId }) {
     setPage(0);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-  };
-
   const handleClick = (e) => {
     e.preventDefault();
-    setRID(e.currentTarget.id);
-    setOpen(true)
-    //console.log(e.currentTarget.id, id);
-    //selectCustomer(e.currentTarget.id);
-    //openEdit(true);
+    setSelectedFilm(e.currentTarget.id);
+    setOpen(true);
   };
+
+  React.useEffect(() => {
+    fetchAPI();
+  }, [selectedFilm])
 
   return (
     <>
-      <TableContainer component={Paper}>
+      <TableContainer component={Paper} sx={{ marginTop: 3 }}>
         <Table sx={{ minWidth: 400 }} aria-label="custom pagination table">
           <TableHead>
             <TableRow>
-              <TableCell>Rental ID</TableCell>
-              <TableCell>Return Date</TableCell>
-              <TableCell>Rental Date</TableCell>
-              <TableCell>Rental Duration</TableCell>
-              <TableCell>Film ID</TableCell>
-              <TableCell>Film Title</TableCell>
-              <TableCell>Store ID</TableCell>
-              <TableCell>Store Address</TableCell>
-              <TableCell>Store City</TableCell>
-              <TableCell>Store District</TableCell>
-              <TableCell>Store Country</TableCell>
-              <TableCell>Inventory ID</TableCell>
-              <TableCell>Last Update</TableCell>
+              <TableCell>Title</TableCell>
+              <TableCell>Genre</TableCell>
+              <TableCell>Release Year</TableCell>
+              <TableCell>Rating</TableCell>
+              <TableCell>Rental Rate</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {(rowsPerPage > 0
-              ? rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              : rows
+              ? searchResult.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              : searchResult
             ).map((row) => (
-              <TableRow 
-                key={row.rental_id}
-                hover 
-                id={row.rental_id}
+              <TableRow
+                key={row.film_id}
+                hover
+                id={row.film_id}
                 onClick={(e) => handleClick(e)}
                 sx={{ cursor: 'pointer' }}
               >
-                <TableCell component="th" scope="row"> {row.rental_id} </TableCell>
-                <TableCell> {row.return_date} </TableCell>
-                <TableCell> {row.rental_date} </TableCell>
-                <TableCell> {row.rental_duration} </TableCell>
-                <TableCell> {row.film_id} </TableCell>
                 <TableCell> {row.title} </TableCell>
-                <TableCell> {row.store_id} </TableCell>
-                <TableCell> {row.address} </TableCell>
-                <TableCell> {row.city} </TableCell>
-                <TableCell> {row.district} </TableCell>
-                <TableCell> {row.country} </TableCell>
-                <TableCell> {row.inventory_id} </TableCell>
-                <TableCell> {row.last_update} </TableCell>
-                {/**
-                <TableCell style={{ width: 160 }} align="left"> {row.first_name} </TableCell>
-                <TableCell style={{ width: 160 }} align="left"> {row.last_name} </TableCell>
-                */}
+                <TableCell> {row.name} </TableCell>
+                <TableCell> {row.release_year} </TableCell>
+                <TableCell> {row.rating} </TableCell>
+                <TableCell> {row.rental_rate} </TableCell>
               </TableRow>
             ))}
             {emptyRows > 0 && (
@@ -179,7 +200,7 @@ export default function CustomerRentalsTable({ rows, setRentalId }) {
               <TablePagination
                 rowsPerPageOptions={[5, 10, 25, { label: 'All', value: -1 }]}
                 colSpan={3}
-                count={rows.length}
+                count={searchResult.length}
                 rowsPerPage={rowsPerPage}
                 page={page}
                 slotProps={{
@@ -198,29 +219,24 @@ export default function CustomerRentalsTable({ rows, setRentalId }) {
           </TableFooter>
         </Table>
       </TableContainer>
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        slotProps={{
-          paper: {
-            component: 'form',
-            onSubmit: (e) => {
-              e.preventDefault();
-              const formData = new FormData();
-              formData.append("rental_id", rID);
-              const formJson = Object.fromEntries(formData.entries());
-              setRentalId(formJson);
-            },
-          },
-        }}
-      >
-        <DialogTitle>Return Film?</DialogTitle>
-          <DialogActions>
-            <Button onClick={handleClose}>Cancel</Button>
-            <Button type="submit">Submit</Button>
-        </DialogActions>
-      </Dialog>
+      {state === 'loading' ? (
+        <></>
+      ) : (
+        <>
+          <FilmDetailsDialog 
+            open={open} 
+            setOpen={setOpen} 
+            endpoint={endpoint}
+            selectedFilmDetails={selectedFilmDetails} 
+            selectedFilmActors={selectedFilmActors} 
+            selectedFilmCount={selectedFilmCount} 
+            selectedFilmLanguage={selectedFilmLanguage} 
+            selectedFilmStock={selectedFilmStock} 
+          />
+        </>
+      )}
     </>
   );
 }
 
+export default FilmsTable;

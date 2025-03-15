@@ -19,23 +19,36 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 
+import { red } from '@mui/material/colors';
+
 //import ViewCustomerRentals from './ViewCustomerRentals'
 import CustomerRentalsTable from './CustomerRentalsTable';
-import { FormControlLabel } from '@mui/material';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import DeleteCustomer from './DeleteCustomer';
+
+const endpoint2 = '127.0.0.1:5000/rental_return';
 
 function EditCustomerDialog({open, onClose, cust, endpoint, setFormInput, countries}) {
   /**
    * customer schema: 
       active | address_id | create_date | customer_id | email | first_name | last_name | last_update | store_id
    */
-  const [selectedCountry, setSelectedCountry] = useState(cust.country_id);
+  const [selectedCountry, setSelectedCountry] = useState(cust.country_id | 1);
   const [value, setValue] = useState('1');
   const [custRentals, setCustRentals] = useState([{}]);
   const [checked, setChecked] = useState(cust.active === 1);
+  const [rentalId, setRentalId] = useState(0);
 
   const fetchAPI = async () => {
     const response = await axios.get(endpoint + '/' + cust.customer_id);
     setCustRentals(response.data.details);
+  };
+
+  const updateRental = async () => {
+    if (rentalId !== 0) {
+      axios.put(endpoint2 + '/' + cust.customer_id, rentalId)
+    }
+
   };
 
   const handleCheckChange = (e) => {
@@ -46,15 +59,27 @@ function EditCustomerDialog({open, onClose, cust, endpoint, setFormInput, countr
     setValue(newValue);
   };
 
+  const handleDelete = (e) => {
+    axios.delete(endpoint + '/' + cust.customer_id)
+      .then(window.location.reload());
+    onClose();
+  };
+
   const handleClose = () => {
     setValue('1');
-    onClose()
+    onClose();
   };
 
   const handleChangeSelectedCountry = (e) => { 
     console.log(e.target.value);
     setSelectedCountry(e.target.value); 
   };
+
+  useEffect(() => {
+    console.log(rentalId);
+    updateRental();
+
+  }, [rentalId])
 
   useEffect(() => {
     setSelectedCountry(cust.country_id);
@@ -77,7 +102,8 @@ function EditCustomerDialog({open, onClose, cust, endpoint, setFormInput, countr
         },
       }}
     >
-    <DialogTitle>Customer Details</DialogTitle><DialogContent sx={{ height: '100%' }}>
+    <DialogTitle>Customer Details</DialogTitle>
+    <DialogContent sx={{ height: '100%' }}>
         <Box sx={{ flexGrow: 1, p: 1 }}>
           <TabContext value={value}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -115,10 +141,12 @@ function EditCustomerDialog({open, onClose, cust, endpoint, setFormInput, countr
                 <Grid size={12} />
                 <Grid size={1}> <Button onClick={onClose}>Cancel</Button> </Grid>
                 <Grid size={1}><Button type="submit" variant="contained">Submit</Button></Grid>
+                <Grid size={8}><Box /></Grid>
+                <Grid size={2}><DeleteCustomer handleDelete={handleDelete} /></Grid>
               </Grid>
             </TabPanel>
             <TabPanel value="2">
-              <CustomerRentalsTable rows={custRentals} />
+              <CustomerRentalsTable rows={custRentals} setRentalId={setRentalId} />
             </TabPanel>
           </TabContext>
         </Box>

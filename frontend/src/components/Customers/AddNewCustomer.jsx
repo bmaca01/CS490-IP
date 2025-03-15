@@ -13,7 +13,7 @@ import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 
-const countries_endpoint = 'http://127.0.0.1:5000/countries';
+//const countries_endpoint = 'http://127.0.0.1:5000/countries';
 
 function AddNewCustomerDialog({onClose, open, setFormInput, countries}) {
   const [selectedCountry, setSelectedCountry] = useState('');

@@ -11,12 +11,12 @@ import EditCustomer from './Customers/EditCustomer'
 const endpoint = "http://127.0.0.1:5000/customers"
 const countries_endpoint = 'http://127.0.0.1:5000/countries';
 
-function CustomerData({query, selectCust, openEditCust}) {
+function CustomerData({query, selectCust, openEditCust, editDiagState}) {
   const [customersArray, setCustomersArray] = useState([{}]);
 
   const fetchAPI = async () => {
     var response;
-    console.log(query);
+    //console.log(query);
     if ( (query["cust-id"] === "" && query["first-name"] === "" && query["last-name"] === "") || query == null) { 
       response = await axios.get(endpoint); 
     } else {
@@ -33,7 +33,7 @@ function CustomerData({query, selectCust, openEditCust}) {
     setCustomersArray(response.data.customers);
   };
 
-  useEffect(() => { fetchAPI(); }, [query]);
+  useEffect(() => { fetchAPI(); }, [query, editDiagState]);
 
   return (
     <div> <CustomerTable rows={customersArray} selectCustomer={selectCust} openEdit={openEditCust} /> </div>
@@ -58,6 +58,10 @@ function SearchForm({submitSearch}) {
 
 function Customers() {
   const [searchQuery, setSearchQuery] = useState({});
+
+  // setter is passed to CustomerData -> CustomerTable
+  // setter is called when a row on the Customers page is clicked
+  // state is used to re-render the top level component on change;
   const [selectedCustId, setSelectedCustId] = useState(null);
   const [selectedCustData, setSelectedCustData] = useState({});
   const [editDiagOpen, setEditDiagOpen] = useState(false);  // I love shared state and spaghetti code
@@ -67,13 +71,11 @@ function Customers() {
 
   const fetchAPI = async () => {
     setState('loading');
-    //const response = await axios.get(endpoint, {params: {customer_id: selectedCustId}})
     await axios.get(endpoint, {params: {customer_id: selectedCustId}}).then((res) => {
       console.log(res.data.customers);
       setSelectedCustData(res.data.customers[0]);
       setState('success');
     });
-    //setSelectedCustData(response.data.customers[0]);
   }
 
   const getCountries = async () => {
@@ -87,17 +89,19 @@ function Customers() {
 
   useEffect(() => {
     fetchAPI();
-  }, [selectedCustId])
+  }, [selectedCustId, editDiagOpen])
 
   return (
     <>
       <SearchForm submitSearch={setSearchQuery} />
       <AddNewCustomer endpoint={endpoint} countries={countries} />
-      <CustomerData query={searchQuery} selectCust={setSelectedCustId} openEditCust={setEditDiagOpen} />
       {state === 'loading' ? (
         <></>
       ) : (
-        <EditCustomer editDiagOpen={editDiagOpen} setEditDiagOpen={setEditDiagOpen} cust={selectedCustData} endpoint={endpoint} countries={countries} />
+        <> 
+          <CustomerData query={searchQuery} selectCust={setSelectedCustId} openEditCust={setEditDiagOpen} editDiagState={editDiagOpen} />
+          <EditCustomer editDiagOpen={editDiagOpen} setEditDiagOpen={setEditDiagOpen} cust={selectedCustData} endpoint={endpoint} countries={countries} />
+        </>
       )}
     </>
   )
